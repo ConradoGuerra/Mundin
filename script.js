@@ -92,7 +92,7 @@ function meuTime(infoEquipes) {
 
 const jogos = meuTime(jogosMaisProximos);
 
-const tabela = [];
+const primeiraLevaDeJogos = [];
 
 for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
   console.log("Rodada", rodadas);
@@ -127,7 +127,7 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
           jogos[clubeSelecionado].comeca &&
           jogos[clubeSelecionado].casa > 0
         ) {
-          tabela.push(`${partida.rival} x ${clubeSelecionado}`);
+          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
           partidaAgendada = 1;
           matches.splice(matches.indexOf(clubeSelecionado), 1);
@@ -146,7 +146,7 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
 
       if (jogos[clubeSelecionado].comeca || jogos[clubeSelecionado].casa) {
         if (jogos[clubeSelecionado].casa < 2 && jogos[partida.rival].fora < 2) {
-          tabela.push(`${clubeSelecionado} x ${partida.rival}`);
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
           partidaAgendada = 1;
           matches.splice(matches.indexOf(clubeSelecionado), 1);
           matches.splice(matches.indexOf(partida.rival), 1);
@@ -163,7 +163,7 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
           }
           return;
         } else if (jogos[partida.rival].casa < 2) {
-          tabela.push(`${partida.rival} x ${clubeSelecionado}`);
+          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
           partidaAgendada = 1;
           matches.splice(matches.indexOf(clubeSelecionado), 1);
@@ -181,7 +181,7 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
         }
       } else {
         if (jogos[partida.rival].casa < 2) {
-          tabela.push(`${partida.rival} x ${clubeSelecionado}`);
+          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
           partidaAgendada = 1;
           matches.splice(matches.indexOf(clubeSelecionado), 1);
@@ -199,7 +199,7 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
           jogos[clubeSelecionado].casa < 2 &&
           jogos[partida.rival].fora < 2
         ) {
-          tabela.push(`${clubeSelecionado} x ${partida.rival}`);
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
           partidaAgendada = 1;
           matches.splice(matches.indexOf(clubeSelecionado), 1);
           matches.splice(matches.indexOf(partida.rival), 1);
@@ -217,66 +217,27 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
   }
 }
 
-tabela.forEach(partida => {
-  const [, casa, fora] = partida.match(/([\W\S]*) x ([\W\S]*)/);
-  tabela.push(`${fora} x ${casa}`);
-});
+const tabela = [];
 
-const novaTabela = tabela.map((partida, index) => {
+primeiraLevaDeJogos.forEach((partida, index) => {
   const rodada = Math.floor(index / (Object.keys(jogos).length / 2));
-
-  return { TABELA: `Rodada ${rodada + 1}: ${partida}` };
+  const [, casa, fora] = partida.match(/([\W\S]*) x ([\W\S]*)/);
+  tabela.push({
+    Rodada: rodada + 1,
+    PrimeiroTurno: partida,
+    SegundoTurno: `${fora} x ${casa}`,
+  });
+  primeiraLevaDeJogos.push(`${fora} x ${casa}`);
 });
 
-let workBook = reader.utils.book_new();
-const workSheet = reader.utils.json_to_sheet(novaTabela);
-reader.utils.book_append_sheet(workBook, workSheet, `response`);
-let exportFileName = `mundinho.xls`;
-reader.writeFile(workBook, exportFileName);
+// Create a new workbook and worksheet
+const workbook = reader.utils.book_new();
+const worksheet = reader.utils.json_to_sheet(tabela);
 
-// const locura = jogos.map(clube => {
-//   const tabela = [];
-//   let jogoCasa = 1;
-//   const [clubeNome] = Object.keys(clube);
-//   const jogosMarcados = [];
-//   clube[clubeNome].forEach(partida => {
-//     if (jogosMarcados.includes(partida.rival)) return;
-//     if (!partida.conexao) {
-//       if (jogoCasa < 3) {
-//         tabela.push(`${clubeNome} x ${partida.rival}`);
-//         jogosMarcados.push(partida.rival);
-//         jogoFora = 1;
-//       } else {
-//         tabela.push(`${partida.rival} x ${clubeNome}`);
-//         jogosMarcados.push(partida.rival);
-//         jogoCasa = 1;
-//       }
-//     } else {
-//       if (jogoCasa < 2) {
-//         tabela.push(`${clubeNome} x ${partida.rival}`);
-//         jogosMarcados.push(partida.rival);
+// Set column widths
+const columnWidths = [{ wch: 7 }, { wch: 30 }, { wch: 30 }];
+worksheet["!cols"] = columnWidths;
+// Add the worksheet to the workbook
+reader.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-//         const segundaFora = clube[clubeNome].find(
-//           clubeAtual => clubeAtual.conexao === partida.rival
-//         );
-//         tabela.push(`${clubeNome} x ${segundaFora.rival}`);
-//         jogosMarcados.push(segundaFora.rival);
-
-//         jogoCasa = 3;
-//       } else {
-//         tabela.push(`${partida.rival} x ${clubeNome}`);
-//         jogosMarcados.push(partida.rival);
-
-//         const segundaFora = clube[clubeNome].find(
-//           clubeAtual => clubeAtual.conexao === partida.rival
-//         );
-//         tabela.push(`${segundaFora.rival} x ${clubeNome}`);
-//         jogosMarcados.push(segundaFora.rival);
-//         jogoCasa = 1;
-//       }
-//     }
-//   });
-//   return tabela;
-// });
-
-// console.log(locura);
+reader.writeFile(workbook, "output.xlsx");
