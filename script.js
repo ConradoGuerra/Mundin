@@ -113,20 +113,47 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
         .filter(match => !match.includes(partida.rival))
         .filter(match => !match.includes(clubeSelecionado));
 
-      if (jogosRemanescentes.length === 2) {
-        if (
-          jogos[jogosRemanescentes[0]].jogosMarcados.includes(
-            jogosRemanescentes[1]
-          )
-        )
-          return;
+      const tabelaViavel = veirifadorDeJogosRemanescentes(jogosRemanescentes);
+
+      function veirifadorDeJogosRemanescentes(arrayDosClubes) {
+        if (!arrayDosClubes.length) return true;
+        for (let c = 0; c < arrayDosClubes.length; c++) {
+          const clube = arrayDosClubes[c];
+          const inimigos = arrayDosClubes.filter(inimigo => inimigo !== clube);
+
+          for (let p = 0; p < inimigos.length; p++) {
+            if (!jogos[clube].jogosMarcados.includes(inimigos[p])) {
+              const jogosQueFaltam = inimigos.filter(
+                match => !match.includes(inimigos[p])
+              );
+              if (veirifadorDeJogosRemanescentes(jogosQueFaltam)) return true;
+            }
+          }
+          return false;
+        }
+        return false;
       }
 
+      if (!tabelaViavel) {
+        return;
+      }
       if (rodadas === Object.keys(jogos).length - 2) {
-        if (
-          jogos[clubeSelecionado].comeca &&
-          jogos[clubeSelecionado].casa > 0
-        ) {
+        if (!jogos[clubeSelecionado].comeca) {
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+
+          partidaAgendada = 1;
+          matches.splice(matches.indexOf(clubeSelecionado), 1);
+          matches.splice(matches.indexOf(partida.rival), 1);
+          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+          jogos[clubeSelecionado].casa = 0;
+          jogos[clubeSelecionado].fora++;
+          jogos[partida.rival].fora = 0;
+          jogos[partida.rival].casa++;
+
+          return;
+        } else {
           primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
           partidaAgendada = 1;
@@ -144,7 +171,41 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
         }
       }
 
-      if (jogos[clubeSelecionado].comeca || jogos[clubeSelecionado].casa) {
+      if (rodadas === Object.keys(jogos).length - 1) {
+        if (jogos[clubeSelecionado].comeca) {
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+
+          partidaAgendada = 1;
+          matches.splice(matches.indexOf(clubeSelecionado), 1);
+          matches.splice(matches.indexOf(partida.rival), 1);
+          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+          jogos[clubeSelecionado].casa = 0;
+          jogos[clubeSelecionado].fora++;
+          jogos[partida.rival].fora = 0;
+          jogos[partida.rival].casa++;
+
+          return;
+        } else {
+          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+
+          partidaAgendada = 1;
+          matches.splice(matches.indexOf(clubeSelecionado), 1);
+          matches.splice(matches.indexOf(partida.rival), 1);
+          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+          jogos[clubeSelecionado].casa = 0;
+          jogos[clubeSelecionado].fora++;
+          jogos[partida.rival].fora = 0;
+          jogos[partida.rival].casa++;
+
+          return;
+        }
+      }
+
+      if (jogos[clubeSelecionado].comeca || !jogos[clubeSelecionado].casa) {
         if (jogos[clubeSelecionado].casa < 2 && jogos[partida.rival].fora < 2) {
           primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
           partidaAgendada = 1;
@@ -240,4 +301,4 @@ worksheet["!cols"] = columnWidths;
 // Add the worksheet to the workbook
 reader.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-reader.writeFile(workbook, "output.xlsx");
+reader.writeFile(workbook, "tabela.xlsx");
