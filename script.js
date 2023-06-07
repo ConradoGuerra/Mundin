@@ -1,8 +1,5 @@
-// Requiring the module
 const reader = require("xlsx");
-const fs = require("fs");
 
-// Reading our test file
 const file = reader.readFile("./Matriz.xlsx");
 
 let data = [];
@@ -24,7 +21,7 @@ const jogosMaisProximos = data.map(clubes => {
   };
 });
 
-function meuTime(infoEquipes) {
+function buscarJogosPorTime(infoEquipes) {
   const todasEquipes = infoEquipes;
   return infoEquipes.reduce((prev, equipe) => {
     const tabelaClube = data.find(clube => clube.__EMPTY === equipe.nome);
@@ -90,18 +87,16 @@ function meuTime(infoEquipes) {
   }, {});
 }
 
-const jogos = meuTime(jogosMaisProximos);
+const jogos = buscarJogosPorTime(jogosMaisProximos);
 
 const primeiraLevaDeJogos = [];
 
 for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
-  console.log("Rodada", rodadas);
   const matches = Object.keys(jogos);
   for (let teams = 0; teams < Object.keys(jogos).length / 2; teams++) {
     const clubeSelecionado = matches[0];
     const rivaisDoClube = jogos[clubeSelecionado];
     let partidaAgendada = 0;
-    if (rodadas === 1) jogos[clubeSelecionado].comeca = true;
 
     rivaisDoClube.jogos.map(partida => {
       if (partidaAgendada) return;
@@ -113,9 +108,11 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
         .filter(match => !match.includes(partida.rival))
         .filter(match => !match.includes(clubeSelecionado));
 
-      const tabelaViavel = veirifadorDeJogosRemanescentes(jogosRemanescentes);
+      const tabelaViavel = verifadorDeJogosRemanescentes(jogosRemanescentes);
 
-      function veirifadorDeJogosRemanescentes(arrayDosClubes) {
+      if (rodadas === 1) jogos[clubeSelecionado].comeca = true;
+
+      function verifadorDeJogosRemanescentes(arrayDosClubes) {
         if (!arrayDosClubes.length) return true;
         for (let c = 0; c < arrayDosClubes.length; c++) {
           const clube = arrayDosClubes[c];
@@ -123,10 +120,14 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
 
           for (let p = 0; p < inimigos.length; p++) {
             if (!jogos[clube].jogosMarcados.includes(inimigos[p])) {
+              if (jogos[clube].casa === 2 && jogos[inimigos[p]].casa === 2)
+                continue;
+              if (jogos[clube].fora === 2 && jogos[inimigos[p]].fora === 2)
+                continue;
               const jogosQueFaltam = inimigos.filter(
                 match => !match.includes(inimigos[p])
               );
-              if (veirifadorDeJogosRemanescentes(jogosQueFaltam)) return true;
+              if (verifadorDeJogosRemanescentes(jogosQueFaltam)) return true;
             }
           }
           return false;
@@ -137,42 +138,42 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
       if (!tabelaViavel) {
         return;
       }
-      if (rodadas === Object.keys(jogos).length - 2) {
-        if (!jogos[clubeSelecionado].comeca) {
-          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+      // if (rodadas === Object.keys(jogos).length - 2) {
+      //   if (jogos[clubeSelecionado].comeca) {
+      //     primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
 
-          partidaAgendada = 1;
-          matches.splice(matches.indexOf(clubeSelecionado), 1);
-          matches.splice(matches.indexOf(partida.rival), 1);
-          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
-          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+      //     partidaAgendada = 1;
+      //     matches.splice(matches.indexOf(clubeSelecionado), 1);
+      //     matches.splice(matches.indexOf(partida.rival), 1);
+      //     jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+      //     jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
 
-          jogos[clubeSelecionado].casa = 0;
-          jogos[clubeSelecionado].fora++;
-          jogos[partida.rival].fora = 0;
-          jogos[partida.rival].casa++;
+      //     jogos[clubeSelecionado].casa = 0;
+      //     jogos[clubeSelecionado].fora++;
+      //     jogos[partida.rival].fora = 0;
+      //     jogos[partida.rival].casa++;
 
-          return;
-        } else {
-          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+      //     return;
+      //   } else {
+      //     primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
-          partidaAgendada = 1;
-          matches.splice(matches.indexOf(clubeSelecionado), 1);
-          matches.splice(matches.indexOf(partida.rival), 1);
-          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
-          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+      //     partidaAgendada = 1;
+      //     matches.splice(matches.indexOf(clubeSelecionado), 1);
+      //     matches.splice(matches.indexOf(partida.rival), 1);
+      //     jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+      //     jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
 
-          jogos[clubeSelecionado].casa = 0;
-          jogos[clubeSelecionado].fora++;
-          jogos[partida.rival].fora = 0;
-          jogos[partida.rival].casa++;
+      //     jogos[clubeSelecionado].casa = 0;
+      //     jogos[clubeSelecionado].fora++;
+      //     jogos[partida.rival].fora = 0;
+      //     jogos[partida.rival].casa++;
 
-          return;
-        }
-      }
+      //     return;
+      //   }
+      // }
 
       if (rodadas === Object.keys(jogos).length - 1) {
-        if (jogos[clubeSelecionado].comeca) {
+        if (jogos[partida.rival].primeirosJogosFora === 2) {
           primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
 
           partidaAgendada = 1;
@@ -180,12 +181,51 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
           matches.splice(matches.indexOf(partida.rival), 1);
           jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
           jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+          return;
+        }
 
-          jogos[clubeSelecionado].casa = 0;
-          jogos[clubeSelecionado].fora++;
-          jogos[partida.rival].fora = 0;
-          jogos[partida.rival].casa++;
+        if (jogos[clubeSelecionado].primeirosJogosCasa === 2) {
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
 
+          partidaAgendada = 1;
+          matches.splice(matches.indexOf(clubeSelecionado), 1);
+          matches.splice(matches.indexOf(partida.rival), 1);
+          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+          return;
+        }
+        if (!jogos[clubeSelecionado].comeca) {
+          if (
+            jogos[clubeSelecionado].casa < 2 &&
+            jogos[partida.rival].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+            return;
+          } else if (
+            jogos[partida.rival].casa < 2 &&
+            jogos[clubeSelecionado].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+            return;
+          }
+          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+
+          partidaAgendada = 1;
+          matches.splice(matches.indexOf(clubeSelecionado), 1);
+          matches.splice(matches.indexOf(partida.rival), 1);
+          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
           return;
         } else {
           primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
@@ -195,35 +235,15 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
           matches.splice(matches.indexOf(partida.rival), 1);
           jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
           jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
-
-          jogos[clubeSelecionado].casa = 0;
-          jogos[clubeSelecionado].fora++;
-          jogos[partida.rival].fora = 0;
-          jogos[partida.rival].casa++;
-
           return;
         }
       }
 
-      if (jogos[clubeSelecionado].comeca || !jogos[clubeSelecionado].casa) {
-        if (jogos[clubeSelecionado].casa < 2 && jogos[partida.rival].fora < 2) {
-          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
-          partidaAgendada = 1;
-          matches.splice(matches.indexOf(clubeSelecionado), 1);
-          matches.splice(matches.indexOf(partida.rival), 1);
-          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
-          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
-
-          jogos[clubeSelecionado].casa++;
-          jogos[clubeSelecionado].fora = 0;
-          jogos[partida.rival].casa = 0;
-          jogos[partida.rival].fora++;
-          if (rodadas === 0) {
-            jogos[clubeSelecionado].primeiroJogo = true;
-            jogos[partida.rival].primeiroJogo = false;
-          }
-          return;
-        } else if (jogos[partida.rival].casa < 2) {
+      if (rodadas === Object.keys(jogos).length - 2) {
+        if (
+          jogos[clubeSelecionado].casa === 1 &&
+          jogos[clubeSelecionado].primeirosJogosFora > 0
+        ) {
           primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
           partidaAgendada = 1;
@@ -234,44 +254,294 @@ for (let rodadas = 1; rodadas < Object.keys(jogos).length; rodadas++) {
 
           jogos[clubeSelecionado].casa = 0;
           jogos[clubeSelecionado].fora++;
-
           jogos[partida.rival].fora = 0;
           jogos[partida.rival].casa++;
-
           return;
         }
+      }
+
+      if (partida.conexao) {
+        if (jogos[clubeSelecionado].comeca || !jogos[clubeSelecionado].casa) {
+          if (
+            jogos[clubeSelecionado].casa < 2 &&
+            jogos[partida.rival].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa++;
+            jogos[clubeSelecionado].fora = 0;
+            jogos[partida.rival].casa = 0;
+            jogos[partida.rival].fora++;
+            if (rodadas === 1) {
+              jogos[partida.rival].primeirosJogosFora = 1;
+              jogos[clubeSelecionado].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosCasa === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosFora === 1
+            ) {
+              jogos[partida.rival].primeirosJogosFora = 2;
+            }
+            return;
+          } else if (
+            jogos[partida.rival].casa < 2 &&
+            jogos[clubeSelecionado].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+
+            if (rodadas === 1) {
+              jogos[clubeSelecionado].primeirosJogosFora = 1;
+              jogos[partida.rival].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosCasa === 1
+            ) {
+              jogos[partida.rival].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosFora === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosFora = 2;
+            }
+
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa = 0;
+            jogos[clubeSelecionado].fora++;
+
+            jogos[partida.rival].fora = 0;
+            jogos[partida.rival].casa++;
+
+            return;
+          }
+        } else {
+          if (
+            jogos[partida.rival].casa < 2 &&
+            jogos[clubeSelecionado].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+
+            if (rodadas === 1) {
+              jogos[clubeSelecionado].primeirosJogosFora = 1;
+              jogos[partida.rival].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosCasa === 1
+            ) {
+              jogos[partida.rival].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosFora === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosFora = 2;
+            }
+
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa = 0;
+            jogos[clubeSelecionado].fora++;
+            jogos[partida.rival].fora = 0;
+            jogos[partida.rival].casa++;
+
+            return;
+          } else if (
+            jogos[clubeSelecionado].casa < 2 &&
+            jogos[partida.rival].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa++;
+            jogos[clubeSelecionado].fora = 0;
+            jogos[partida.rival].casa = 0;
+            jogos[partida.rival].fora++;
+
+            if (rodadas === 1) {
+              jogos[partida.rival].primeirosJogosFora = 1;
+              jogos[clubeSelecionado].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosCasa === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosFora === 1
+            ) {
+              jogos[partida.rival].primeirosJogosFora = 2;
+            }
+            return;
+          }
+        }
       } else {
-        if (jogos[partida.rival].casa < 2) {
-          primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+        if (!jogos[clubeSelecionado].comeca || jogos[clubeSelecionado].casa) {
+          if (
+            jogos[clubeSelecionado].casa < 2 &&
+            jogos[partida.rival].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
 
-          partidaAgendada = 1;
-          matches.splice(matches.indexOf(clubeSelecionado), 1);
-          matches.splice(matches.indexOf(partida.rival), 1);
-          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
-          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+            jogos[clubeSelecionado].casa++;
+            jogos[clubeSelecionado].fora = 0;
+            jogos[partida.rival].casa = 0;
+            jogos[partida.rival].fora++;
+            if (rodadas === 1) {
+              jogos[partida.rival].primeirosJogosFora = 1;
+              jogos[clubeSelecionado].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosCasa === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosFora === 1
+            ) {
+              jogos[partida.rival].primeirosJogosFora = 2;
+            }
+            return;
+          } else if (
+            jogos[partida.rival].casa < 2 &&
+            jogos[clubeSelecionado].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
 
-          jogos[clubeSelecionado].casa = 0;
-          jogos[clubeSelecionado].fora++;
-          jogos[partida.rival].fora = 0;
-          jogos[partida.rival].casa++;
+            if (rodadas === 1) {
+              jogos[clubeSelecionado].primeirosJogosFora = 1;
+              jogos[partida.rival].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosCasa === 1
+            ) {
+              jogos[partida.rival].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosFora === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosFora = 2;
+            }
 
-          return;
-        } else if (
-          jogos[clubeSelecionado].casa < 2 &&
-          jogos[partida.rival].fora < 2
-        ) {
-          primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
-          partidaAgendada = 1;
-          matches.splice(matches.indexOf(clubeSelecionado), 1);
-          matches.splice(matches.indexOf(partida.rival), 1);
-          jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
-          jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
 
-          jogos[clubeSelecionado].casa++;
-          jogos[clubeSelecionado].fora = 0;
-          jogos[partida.rival].casa = 0;
-          jogos[partida.rival].fora++;
-          return;
+            jogos[clubeSelecionado].casa = 0;
+            jogos[clubeSelecionado].fora++;
+
+            jogos[partida.rival].fora = 0;
+            jogos[partida.rival].casa++;
+
+            return;
+          }
+        } else {
+          if (
+            jogos[partida.rival].casa < 2 &&
+            jogos[clubeSelecionado].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${partida.rival} x ${clubeSelecionado}`);
+
+            if (rodadas === 1) {
+              jogos[clubeSelecionado].primeirosJogosFora = 1;
+              jogos[partida.rival].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosCasa === 1
+            ) {
+              jogos[partida.rival].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosFora === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosFora = 2;
+            }
+
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa = 0;
+            jogos[clubeSelecionado].fora++;
+            jogos[partida.rival].fora = 0;
+            jogos[partida.rival].casa++;
+
+            return;
+          } else if (
+            jogos[clubeSelecionado].casa < 2 &&
+            jogos[partida.rival].fora < 2
+          ) {
+            primeiraLevaDeJogos.push(`${clubeSelecionado} x ${partida.rival}`);
+            partidaAgendada = 1;
+            matches.splice(matches.indexOf(clubeSelecionado), 1);
+            matches.splice(matches.indexOf(partida.rival), 1);
+            jogos[partida.rival].jogosMarcados.push(clubeSelecionado);
+            jogos[clubeSelecionado].jogosMarcados.push(partida.rival);
+
+            jogos[clubeSelecionado].casa++;
+            jogos[clubeSelecionado].fora = 0;
+            jogos[partida.rival].casa = 0;
+            jogos[partida.rival].fora++;
+            if (rodadas === 1) {
+              jogos[partida.rival].primeirosJogosFora = 1;
+              jogos[clubeSelecionado].primeirosJogosCasa = 1;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[clubeSelecionado].primeirosJogosCasa === 1
+            ) {
+              jogos[clubeSelecionado].primeirosJogosCasa = 2;
+            }
+            if (
+              rodadas === 2 &&
+              jogos[partida.rival].primeirosJogosFora === 1
+            ) {
+              jogos[partida.rival].primeirosJogosFora = 2;
+            }
+            return;
+          }
         }
       }
     });
@@ -291,14 +561,11 @@ primeiraLevaDeJogos.forEach((partida, index) => {
   primeiraLevaDeJogos.push(`${fora} x ${casa}`);
 });
 
-// Create a new workbook and worksheet
 const workbook = reader.utils.book_new();
 const worksheet = reader.utils.json_to_sheet(tabela);
 
-// Set column widths
 const columnWidths = [{ wch: 7 }, { wch: 30 }, { wch: 30 }];
 worksheet["!cols"] = columnWidths;
-// Add the worksheet to the workbook
-reader.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+reader.utils.book_append_sheet(workbook, worksheet, "Jogos");
 
-reader.writeFile(workbook, "tabela.xlsx");
+reader.writeFile(workbook, "tabela norte2.xlsx");
